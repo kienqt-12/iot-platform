@@ -8,6 +8,7 @@
     },
     "build": {
       "inputs": ["$TURBO_DEFAULT", "**/.env*"],
+      "cache": false,
       "env": [
         "NODE_ENV",
         "JWT_ACCESS_TOKEN_SECRET",
@@ -16,7 +17,11 @@
         "JWT_REFRESH_TOKEN_EXPIRE",
         "ADMIN_USERNAME",
         "ADMIN_PASSWORD",
-        "MONGO_URI",
+        "MONGODB_URI",
+        "AWS_ACCESS_KEY_ID",
+        "AWS_SECRET_ACCESS_KEY",
+        "AWS_REGION",
+        "AWS_BUCKET_NAME",
         "NEXT_PUBLIC_API_URL"
       ],
       "dependsOn": ["^build"],
@@ -27,6 +32,10 @@
     "test:e2e": {},
     "prisma:generate": {
       "dependsOn": ["^prisma:generate"]
+    },
+    "db:push": {
+      "cache": false,
+      "dependsOn": ["^db:push"]
     }
   }
 }

@@ -16,6 +16,17 @@ export class UserService {
       data: {
         username: data.username,
         password: await hashPassword(data.password),
+        role: data.role || 'USER',
+      },
+    });
+  }
+
+  async search(query: string) {
+    return this.prisma.user.findMany({
+      where: {
+        username: {
+          contains: query,
+        },
       },
     });
   }

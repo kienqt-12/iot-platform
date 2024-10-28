@@ -38,28 +38,42 @@ export default function DashboardSidebar({ role }: { role: Role }) {
       label: 'Home',
       href: '/',
       icon: Icons.home,
-      role: ['USER', 'ADMIN'],
+      role: ['USER', 'ADMIN', 'EMPLOYEE'],
+    },
+    {
+      id: 'gateway',
+      label: 'Gateways',
+      href: '/gateways',
+      icon: Icons.cpu,
+      role: ['USER'],
     },
     {
       id: 'devices',
       label: 'Devices',
       href: '/devices',
       icon: Icons.device,
-      role: ['USER', 'ADMIN'],
+      role: ['USER'],
+    },
+    {
+      id: 'device-templates',
+      label: 'Device templates',
+      href: '/device-templates',
+      icon: Icons.device,
+      role: ['ADMIN'],
     },
     {
       id: 'locations',
       label: 'Locations',
       href: '/locations',
       icon: Icons.mappin,
-      role: ['USER', 'ADMIN'],
+      role: ['USER', 'EMPLOYEE'],
     },
     {
       id: 'executive',
       label: 'Executive structure',
       href: '/executive',
       icon: Icons.cog,
-      role: ['ADMIN'],
+      role: ['USER'],
     },
     {
       id: 'users',
@@ -71,7 +85,7 @@ export default function DashboardSidebar({ role }: { role: Role }) {
   ];
 
   const pathname = usePathname();
-  const path = useMemo(() => pathname.split('/')[1] || '/', [pathname]);
+  const path = useMemo(() => `/${pathname.split('/')[2] || ''}`, [pathname]);
   const [isCollapsed, setIsCollapsed] = useState(false);
 
   return (

@@ -1,22 +1,30 @@
 import {
+  ArrowUpTrayIcon as ArrowUpTrayIconOutline,
   BellIcon as BellIconOutline,
   BoltIcon as BoltIconOutline,
+  CheckIcon as CheckIconOutline,
   CogIcon as CogIconOutline,
+  CpuChipIcon as CpuChipIconOutline,
   HomeIcon as HomeIconOutline,
   MagnifyingGlassIcon as MagnifyingGlassIconOutline,
   MapPinIcon as MapPinIconOutline,
+  PlusIcon as PlusIconOutline,
   UserIcon as UserIconOutline,
 } from '@heroicons/react/24/outline';
 import {
+  ArrowUpTrayIcon,
   BellIcon,
   BoltIcon,
+  CheckIcon,
   CogIcon,
+  CpuChipIcon,
   HomeIcon,
   MapPinIcon,
+  PlusIcon,
   UserIcon,
 } from '@heroicons/react/24/solid';
 
-import { ArrowLeftFromLineIcon, ArrowRightFromLineIcon } from 'lucide-react';
+import { ArrowLeftFromLineIcon, ArrowRightFromLineIcon, MoreHorizontal, ArrowUpDown } from 'lucide-react';
 
 export type IconProps = React.HTMLAttributes<SVGElement> & {
   variant?: 'outline' | 'solid';
@@ -65,6 +73,13 @@ export const Icons = {
       <BoltIconOutline {...props} />
     ),
 
+  cpu: (props: IconProps) =>
+    props.variant === 'solid' ? (
+      <CpuChipIcon {...props} />
+    ) : (
+      <CpuChipIconOutline {...props} />
+    ),
+
   cog: (props: IconProps) =>
     props.variant === 'solid' ? (
       <CogIcon {...props} />
@@ -75,4 +90,29 @@ export const Icons = {
   expand: (props: IconProps) => <ArrowRightFromLineIcon {...props} />,
 
   collapse: (props: IconProps) => <ArrowLeftFromLineIcon {...props} />,
+
+  plus: (props: IconProps) =>
+    props.variant === 'solid' ? (
+      <PlusIcon {...props} />
+    ) : (
+      <PlusIconOutline {...props} />
+    ),
+
+  upload: (props: IconProps) =>
+    props.variant === 'solid' ? (
+      <ArrowUpTrayIcon {...props} />
+    ) : (
+      <ArrowUpTrayIconOutline {...props} />
+    ),
+
+  check: (props: IconProps) =>
+    props.variant === 'solid' ? (
+      <CheckIcon {...props} />
+    ) : (
+      <CheckIconOutline {...props} />
+    ),
+
+  more: (props: IconProps) => <MoreHorizontal {...props} />,
+
+  sort: (props: IconProps) => <ArrowUpDown {...props} />,
 };
