@@ -3,11 +3,19 @@ import DeviceSection from '../../../../components/devices/DeviceSection';
 import DeviceToolbar from '../../../../components/devices/DeviceToolbar';
 import api from '../../../../config/api';
 import { DeviceTemplateModel } from '../../../../types/device-template';
+import { getDictionary } from '../../../dictionaries';
 const NewDeviceTemplateDialog = dynamic(
   () => import('../../../../components/devices/NewDeviceTemplateDialog'),
   { ssr: false },
 );
-export default async function DeviceTemplatesPage() {
+export default async function DeviceTemplatesPage({
+  params,
+}: {
+  params: {
+    lang: string;
+  };
+}) {
+  const dictionary = await getDictionary(params.lang);
   try {
     const data = await api.get<any, DeviceTemplateModel[]>('device-template');
     return (
@@ -16,7 +24,7 @@ export default async function DeviceTemplatesPage() {
           <DeviceToolbar />
           <NewDeviceTemplateDialog />
         </div>
-        <DeviceSection deviceTemplates={data} />
+        <DeviceSection deviceTemplates={data} dictionary={dictionary} />
       </div>
     );
   } catch (error) {}
