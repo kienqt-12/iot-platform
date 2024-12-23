@@ -5,12 +5,11 @@ import {
   TabsTrigger,
 } from '@repo/ui/components/ui/tabs';
 import { DeviceTable } from '../../../../../../components/devices/DeviceTable';
+import ChartSection from '../../../../../../components/location/ChartSection';
 import UserLocationTable from '../../../../../../components/location/UserLocationTable';
-import JobTable from './JobTable';
-import HumidityChart from '../../../../../../components/charts/HumidityChart';
-import WaterAmountChart from '../../../../../../components/charts/WaterAmountChart';
-import ProductivityChart from '../../../../../../components/charts/ProductivityChart';
 import { getDictionary } from '../../../../../dictionaries';
+import JobTable from './JobTable';
+import AutomationSection from '../../../../../../components/automation/AutomationSection';
 
 export default async function UserLocationPage({
   params,
@@ -26,28 +25,34 @@ export default async function UserLocationPage({
       <TabsList className="w-full border-b">
         <TabsTrigger
           value="devices"
-          className="text-lg max-w-[100px] hover:text-primary/70"
+          className="text-lg max-w-[130px] hover:text-primary/70"
         >
-          Devices
+          {dictionary.devices}
         </TabsTrigger>
         <TabsTrigger
           value="users"
-          className="text-lg max-w-[100px] hover:text-primary/70"
+          className="text-lg max-w-[130px] hover:text-primary/70"
         >
-          Users
+          {dictionary.users}
         </TabsTrigger>
         <TabsTrigger
           value="jobs"
-          className="text-lg max-w-[100px] hover:text-primary/70"
+          className="text-lg max-w-[130px] hover:text-primary/70"
         >
-          Jobs
+          {dictionary.jobs}
         </TabsTrigger>
         <TabsTrigger
           value="charts"
-          className="text-lg max-w-[100px] hover:text-primary/70"
+          className="text-lg max-w-[130px] hover:text-primary/70"
         >
-          Charts
+          {dictionary.charts}
         </TabsTrigger>
+        <TabsTrigger
+          value="automations"
+          className="text-lg max-w-[130px] hover:text-primary/70"
+        >
+          Automations
+          </TabsTrigger>
         {/* <TabsTrigger
           value="areas"
           className="text-lg max-w-[100px] hover:text-primary/70"
@@ -55,22 +60,23 @@ export default async function UserLocationPage({
           Areas
         </TabsTrigger> */}
       </TabsList>
-      <TabsContent value="areas">
+      {/* <TabsContent value="areas">
         <DeviceTable dictionary={dictionary}/>
-      </TabsContent>
+      </TabsContent> */}
       <TabsContent value="devices">
-        <DeviceTable dictionary={dictionary}/>
+        <DeviceTable dictionary={dictionary} locationId={params.id} />
       </TabsContent>
       <TabsContent value="users">
-        <UserLocationTable locationId={params.id} />
+        <UserLocationTable locationId={params.id} dictionary={dictionary} />
       </TabsContent>
       <TabsContent value="jobs">
-        <JobTable locationId={params.id} />
+        <JobTable locationId={params.id} dictionary={dictionary} />
       </TabsContent>
       <TabsContent value="charts">
-        <HumidityChart />
-        <WaterAmountChart />
-        <ProductivityChart />
+        <ChartSection locationId={params.id} dictionary={dictionary} />
+      </TabsContent>
+      <TabsContent value="automations">
+        <AutomationSection dictionary={dictionary} />
       </TabsContent>
     </Tabs>
   );

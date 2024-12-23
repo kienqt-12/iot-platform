@@ -17,6 +17,7 @@ model User {
   id            String         @id @default(auto()) @map("_id") @db.ObjectId
   username      String         @unique
   password      String
+  name          String?
   role          Role           @default(USER)
   employerIds   String[]       @db.ObjectId
   employeeIds   String[]       @db.ObjectId
@@ -38,6 +39,8 @@ model Location {
   areas         Area[]
   userLocations UserLocation[]
   Job           Job[]
+  irrigation    Irrigation[]
+  Automations   Automations[]
 
   @@index([ownerId], name: "ownerId")
 }
@@ -110,15 +113,58 @@ model Device {
   serialNumber String         @unique
   topic        String
   areaId       String         @db.ObjectId
+  online       Boolean        @default(false)
   area         Area           @relation(fields: [areaId], references: [id])
   deviceType   DeviceType
+  data         Data[]
   templateId   String         @db.ObjectId
   template     DeviceTemplate @relation(fields: [templateId], references: [id])
   gatewayId    String?        @db.ObjectId
-  gateway      Gateway?       @relation(fields: [gatewayId], references: [id])
+  gateway      Gateway?       @relation(fields: [gatewayId], references: [id], onDelete: Cascade)
+  Automations  Automations[]
 
   @@index([areaId], name: "areaId")
   @@index([gatewayId], name: "gatewayId")
+}
+
+model Irrigation {
+  id         String   @id @default(auto()) @map("_id") @db.ObjectId
+  amout      Float
+  time       Int
+  locationId String   @db.ObjectId
+  location   Location @relation(fields: [locationId], references: [id], onDelete: Cascade)
+}
+
+model Automations {
+  id          String     @id @default(auto()) @map("_id") @db.ObjectId
+  name        String
+  condition   Condition?
+  actions     Action[]
+  limitPeriod Int?
+  deviceId    String?    @db.ObjectId
+  device      Device?    @relation(fields: [deviceId], references: [id], onDelete: Cascade)
+  locationId  String     @db.ObjectId
+  location    Location   @relation(fields: [locationId], references: [id], onDelete: Cascade)
+}
+
+type Condition {
+  type                 ConditionType
+  cronCondition        String?
+  deviceStateCondition DeviceStateCondition?
+}
+
+type Action {
+  type     ActionType
+  deviceId String?
+  toEmail  String?
+  title    String?
+  body     String?
+}
+
+type DeviceStateCondition {
+  type     DeviceStateConditionType
+  dataType DataType?
+  value    String
 }
 
 type GatewayAuth {
@@ -136,6 +182,20 @@ type LocationSetting {
   totalHole       Int
   dripRatePerHole Int
   wateringMode    Boolean
+}
+
+type Data {
+  type DataType
+  time Int
+  data Float
+}
+
+enum DataType {
+  Temperature
+  Humidity
+  Rainfall
+  Wind
+  SoilMoisture
 }
 
 enum DeviceType {
@@ -160,4 +220,29 @@ enum JobStatus {
   PENDING
   IN_PROGRESS
   COMPLETED
+}
+
+enum ConditionType {
+  Schedule
+  DeviceState
+  Scene
+}
+
+enum DeviceStateConditionType {
+  equal
+  notEqual
+  greaterThan
+  lessThan
+  greaterThanOrEqual
+  lessThanOrEqual
+  between
+  notBetween
+  in
+  notIn
+}
+
+enum ActionType {
+  TurnOn
+  TurnOff
+  SendEmail
 }

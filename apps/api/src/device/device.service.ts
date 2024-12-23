@@ -1,11 +1,16 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { Prisma } from '@prisma/client';
+import { MqttService } from 'src/mqtt/mqtt.service';
 import { PrismaService } from 'src/prisma.service';
 import { CreateDeviceDto } from './types/create-device.dto';
+import { SensorData } from './types/sensor-data';
 
 @Injectable()
 export class DeviceService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly mqtt: MqttService,
+  ) {}
 
   async getDevices(args: Prisma.DeviceFindManyArgs) {
     return this.prisma.device.findMany(args);
@@ -17,24 +22,96 @@ export class DeviceService {
     });
   }
 
-  async getDeviceByUser(userId: string) {
-    //TODO: Implement this method
+  async getDeviceByLocation({
+    userId,
+    locationId,
+  }: {
+    userId: string;
+    locationId: string;
+  }) {
+    const location = await this.prisma.location.findUnique({
+      where: {
+        id: locationId,
+      },
+      include: {
+        areas: {
+          include: {
+            devices: true,
+          },
+        },
+      },
+    });
+
+    return location?.areas.flatMap((area) => area.devices) || [];
   }
 
   async createDevice(data: CreateDeviceDto) {
-    return this.prisma.device.create({
+    const device = await this.prisma.device.create({
       data: {
         ...data,
         topic: data.topic || `device/${data.serialNumber}`,
       },
     });
+
+    if (data.topic) {
+      this.mqtt.subscribe(
+        data.gatewayId,
+        data.topic,
+        device.id,
+        async (topic, message: SensorData) => {
+          try {
+            await this.prisma.device.update({
+              where: { id: device.id },
+              data: {
+                data: {
+                  push: {
+                    type: message.type,
+                    time: message.time,
+                    data: message.data,
+                  },
+                },
+              },
+            });
+          } catch (e) {
+            Logger.error(e, 'MqttService');
+          }
+        },
+      );
+    }
+    return device;
   }
 
   async updateDevice(id: string, data: Prisma.DeviceUpdateInput) {
-    return this.prisma.device.update({
+    const device = await this.prisma.device.update({
       where: { id },
       data,
     });
+
+    if (data.topic) {
+      this.mqtt.subscribe(
+        device.gatewayId,
+        device.topic,
+        device.id,
+        async (topic, message: SensorData) => {
+          try {
+            const deviceUpdated = await this.prisma.device.update({
+              where: { id: device.id },
+              data: {
+                data: {
+                  push: {
+                    type: message.type,
+                    time: new Date().getTime(),
+                    data: message.data,
+                  },
+                },
+              },
+            });
+          } catch (e) {
+            Logger.error(e, 'MqttService');
+          }
+        },
+      );
+    }
   }
 
   async deleteDevice(id: string) {

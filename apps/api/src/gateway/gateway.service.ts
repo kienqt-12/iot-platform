@@ -31,6 +31,7 @@ export class GatewayService {
         password: gateway.auth?.password,
         port: gateway.port,
         host: gateway.host,
+        protocol: gateway.port === 1883 ? 'mqtt' : 'mqtts',
       });
     } catch (e) {
       Logger.error(e, 'GatewayService');
@@ -43,10 +44,17 @@ export class GatewayService {
     return { success: true };
   }
 
-  async getGatewaysForUser(userId: string) {
+  async getGatewaysForUser({
+    userId,
+    locationId,
+  }: {
+    userId: string;
+    locationId?: string;
+  }) {
     const location = await this.prisma.area.findMany({
       where: {
         location: {
+          id: locationId,
           ownerId: userId,
         },
       },
@@ -58,10 +66,14 @@ export class GatewayService {
   }
 
   async deleteGateway(gatewayId: string) {
-    await this.prisma.gateway.delete({
-      where: { id: gatewayId },
+    await this.prisma.$transaction(async (prisma) => {
+      await Promise.all([
+        prisma.gateway.delete({
+          where: { id: gatewayId },
+        }),
+        this.mqttService.disconnect(gatewayId),
+      ]);
     });
-    await this.mqttService.disconnect(gatewayId);
     return { success: true };
   }
 }

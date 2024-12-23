@@ -26,20 +26,28 @@ import { getCookie } from 'cookies-next';
 import React from 'react';
 import useSWR from 'swr';
 import api from '../../config/api';
+import { DictionaryProps } from '../../types/dictionary';
 import { UserLocation } from '../../types/user';
-import AddUserLocationDialog from '../user/AddUserLocationDialog';
 import UserTable from '../DataTable';
+import AddUserLocationDialog from '../user/AddUserLocationDialog';
+import DataTable from '../DataTable';
 
 const fetcher = async (url: string) =>
   api.get<any, UserLocation[]>(url).then((res) => res);
 export default function UserLocationTable({
   locationId,
+  dictionary,
 }: {
   locationId: string;
-}) {
+} & DictionaryProps) {
   const { data, isLoading, error, mutate } = useSWR(
     `location/user?locationId=${locationId}`,
     fetcher,
+    {
+      revalidateOnFocus: false,
+      refreshInterval: 0,
+      revalidateOnReconnect: false,
+    }
   );
 
   const columns: ColumnDef<UserLocation>[] = [
@@ -74,7 +82,7 @@ export default function UserLocationTable({
             onClick={() => column.toggleSorting(column.getIsSorted() === 'asc')}
             className="p-0 hover:bg-none"
           >
-            Username
+            {dictionary.username}
             <Icons.sort className="ml-2 h-4 w-4" />
           </Button>
         );
@@ -120,13 +128,13 @@ export default function UserLocationTable({
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuLabel>Actions</DropdownMenuLabel>
-              <DropdownMenuItem>Edit</DropdownMenuItem>
+              <DropdownMenuLabel>{dictionary.actions}</DropdownMenuLabel>
+              <DropdownMenuItem>{dictionary.edit}</DropdownMenuItem>
               <DropdownMenuItem
                 onClick={async () => {
                   try {
                     if (user.id === userId) {
-                      toast.error('You cannot remove yourself from location');
+                      toast.error(dictionary.youCannotRemoveYourself);
                       return;
                     }
                     await api.delete(`location/user`, {
@@ -136,13 +144,13 @@ export default function UserLocationTable({
                       },
                     });
                     mutate();
-                    toast.success('User removed from location');
+                    toast.success(dictionary.userRemovedFromLocation);
                   } catch (error) {
-                    toast.error('Failed to remove user from location');
+                    toast.error(dictionary.userRemovedFromLocationFailed);
                   }
                 }}
               >
-                Delete
+                {dictionary.delete}
               </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
@@ -178,7 +186,7 @@ export default function UserLocationTable({
     <div className="w-full">
       <div className="flex items-center py-4 justify-between">
         <Input
-          placeholder="Filter username..."
+          placeholder={dictionary.filterName}
           className="max-w-sm"
           value={
             (table.getColumn('username')?.getFilterValue() as string) || ''
@@ -188,11 +196,12 @@ export default function UserLocationTable({
           }}
         />
         <AddUserLocationDialog
+          dictionary={dictionary}
           locationId={locationId}
           onAddUser={() => mutate()}
         />
       </div>
-      <UserTable table={table} columns={columns} />
+      <DataTable table={table} columns={columns} dictionary={dictionary} />
     </div>
   );
 }
