@@ -1,5 +1,6 @@
 'use client';
 
+import { Icons } from '@repo/ui/components/icons/icons';
 import { Card } from '@repo/ui/components/ui/card';
 import { useMemo } from 'react';
 import useSWR from 'swr';
@@ -13,6 +14,13 @@ import RadianCardChart from './RadianCardChart';
 
 const fetcher = (url: string) =>
   api.get<any, DeviceModel[]>(url).then((res) => res);
+const colors = {
+  Temperature: 'hsl(var(--chart-1))',
+  Humidity: 'hsl(var(--chart-2))',
+  Rainfall: 'hsl(var(--chart-3))',
+  Wind: 'hsl(var(--chart-4))',
+  SoilMoisture: 'hsl(var(--chart-5))',
+};
 export default function ChartSection({
   locationId,
   dictionary,
@@ -62,7 +70,7 @@ export default function ChartSection({
           return <DeviceSwitcher key={device.id} device={device} />;
         })}
       </div>
-      <div className="grid md:grid-cols-2 grid-cols-1 gap-4 mx-8">
+      <div className="grid lg:grid-cols-2 grid-cols-1 gap-4 mx-8">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <RadianCardChart
             chartConfig={{
@@ -71,7 +79,12 @@ export default function ChartSection({
               },
             }}
             value={humidity || 0}
-            title={'Humidity'}
+            title={
+              <div className="flex justify-between items-center">
+                <h2 className="text-lg font-semibold">Humidity</h2>
+                <Icons.water className="w-6 h-6" />
+              </div>
+            }
           />
           <RadianCardChart
             chartConfig={{
@@ -80,27 +93,49 @@ export default function ChartSection({
               },
             }}
             value={soilMoisture || 0}
-            title={'Moisture'}
+            title={
+              <div className="flex justify-between items-center">
+                <h2 className="text-lg font-semibold">Soil Moisture</h2>
+                <Icons.soil className="w-6 h-6" />
+              </div>
+            }
           />
         </div>
         <div className="grid gap-4 md:grid-cols-2  grid-cols-1">
           <Card className="p-4">
-            <h2 className="text-lg font-semibold">Temperature</h2>
+            <div className="flex justify-between items-center">
+              <h2 className="text-lg font-semibold">Temperature</h2>
+              <Icons.temperature className="w-6 h-6" />
+            </div>
             <span className="font-semibold">{temperature || 0}</span>
           </Card>
           <Card className="p-4">
-            <h2 className="text-lg font-semibold">Wind</h2>
+            <div className="flex justify-between items-center">
+              <h2 className="text-lg font-semibold">Wind</h2>
+              <Icons.wind className="w-6 h-6" />
+            </div>
             <span className="font-semibold">{wind || 0}</span>
           </Card>
           <Card className="p-4">
-            <h2 className="text-lg font-semibold">Rainfall</h2>
+            <div className="flex justify-between items-center">
+              <h2 className="text-lg font-semibold">Rainfall</h2>
+              <Icons.rain className="w-6 h-6" />
+            </div>
             <span className="font-semibold">{rainfall || 0}</span>
           </Card>
         </div>
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
         {chartsData?.map(({ type, datas }) => {
-          return <Weather datas={datas} title={type} label={type} />;
+          return (
+            <Weather
+              key={type}
+              datas={datas}
+              title={type}
+              label={type}
+              color={colors[type as keyof typeof colors]}
+            />
+          );
         })}
       </div>
     </div>
