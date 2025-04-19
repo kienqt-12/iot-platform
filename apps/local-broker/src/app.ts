@@ -1,10 +1,5 @@
 import aedes, { Client, Subscription } from 'aedes';
-import express, {
-  NextFunction,
-  Request,
-  RequestHandler,
-  Response,
-} from 'express';
+import express, { NextFunction, Request, RequestHandler, Response } from 'express';
 import mqtt, { MqttClient } from 'mqtt';
 import net from 'net';
 import path from 'path';
@@ -24,19 +19,25 @@ interface SensorData {
 const latestSensorData: Record<string, SensorData> = {};
 
 // --- 1) HTTP server ---
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(path.join(__dirname, 'public'))); // Serve static files
 app.use(express.json());
 
+// Route để tạo mã QR
 app.get('/qr-data', async (_req: Request, res: Response) => {
-  const gatewayURL = `http://10.15.225.103:${HTTP_PORT}/connect`;
+  const data = {
+    host: '10.15.225.103', // Địa chỉ IP của server
+    port: HTTP_PORT, // Sử dụng cổng HTTP
+    clientId: 'esp8266',
+  };
   try {
-    const qr = await QRCode.toDataURL(gatewayURL);
-    res.json({ qr, url: gatewayURL });
+    const qr = await QRCode.toDataURL(JSON.stringify(data));
+    res.json({ qr, url: JSON.stringify(data) });
   } catch {
     res.status(500).json({ error: 'Không tạo được mã QR' });
   }
 });
 
+// Route để lấy dữ liệu cảm biến mới nhất
 const getLatestHandler: RequestHandler = (
   _req: Request,
   res: Response,
@@ -51,6 +52,12 @@ const getLatestHandler: RequestHandler = (
 
 app.get('/latest', getLatestHandler);
 
+// Route cho gốc (/) để phục vụ file HTML
+app.get('/', (_req: Request, res: Response) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html')); // Thay 'index.html' bằng tên file HTML của bạn
+});
+
+// Khởi động HTTP server
 app.listen(HTTP_PORT, () => {
   console.log(`🟢 Express server tại http://localhost:${HTTP_PORT}`);
 });
@@ -74,14 +81,18 @@ mqttClient.on('connect', () => {
 
 mqttClient.on('message', (topic: string, message: Buffer) => {
   try {
-    const { type, time, data } = JSON.parse(message.toString());
-    if (type && time && data !== undefined) {
-      latestSensorData[type] = { time, data };
-      console.log(
-        `✅ ${type}: ${data} @ ${new Date(time * 1000).toLocaleString()}`,
-      );
-    } else {
-      console.warn('⚠️ Payload thiếu trường:', message.toString());
+    const parsedMessage = JSON.parse(message.toString());
+    console.log('📥 Nhận payload:', parsedMessage);
+    
+    const { type, time, data } = parsedMessage;
+
+    if (topic === 'esp8266/sensor') {
+      if (type && time && data !== undefined) {
+        latestSensorData[type] = { time, data };
+        console.log(`✅ ${type}: ${data} @ ${new Date(time * 1000).toLocaleString()}`);
+      } else {
+        console.warn('⚠️ Payload thiếu trường:', parsedMessage);
+      }
     }
   } catch (e) {
     console.error('❌ JSON không hợp lệ:', message.toString());
@@ -97,7 +108,6 @@ aedesServer
     subscriptions.forEach((sub) => {
       console.log(`📥 Client ${client?.id} subscribed to topic ${sub.topic}`);
 
-      // Check if client subscribed to their connection confirmation topic
       if (sub.topic === `gateway/connected/${client?.id}`) {
         const welcomeMessage = {
           type: 'gateway/connected',
@@ -109,24 +119,17 @@ aedesServer
           },
         };
 
-        // Add 1 second delay before sending confirmation
         setTimeout(() => {
-          aedesServer.publish(
-            {
-              topic: `gateway/connected/${client?.id}`,
-              payload: JSON.stringify(welcomeMessage),
-              qos: 0,
-              retain: false,
-              cmd: 'publish',
-              dup: false,
-            },
-            () => {
-              console.log(
-                `📤 Gửi welcome message đến gateway/connected/${client?.id}`,
-              );
-            },
-            
-          );
+          aedesServer.publish({
+            topic: `gateway/connected/${client?.id}`,
+            payload: JSON.stringify(welcomeMessage),
+            qos: 0,
+            retain: false,
+            cmd: 'publish',
+            dup: false,
+          }, () => {
+            console.log(`📤 Gửi welcome message đến gateway/connected/${client?.id}`);
+          });
         }, 1000);
       }
     });
@@ -134,23 +137,3 @@ aedesServer
   .on('clientDisconnect', (client: Client) => {
     console.log(`❌ Client ngắt kết nối: ${client?.id}`);
   });
-
-// aedesServer.on(
-//   'publish' as any,
-//   (packet: AedesPublishPacket, client?: Client): void => {
-//     if (client) {
-//       const { topic, payload } = packet;
-//       const message = payload.toString();
-//       console.log(
-//         `📨 Nhận publish từ ${client.id}: topic=${topic}, message=${message}`,
-//       );
-
-//       try {
-//         const data = JSON.parse(message);
-//         console.log('📦 Payload:', data);
-//       } catch {
-//         console.warn('⚠️ Không phải JSON:', message);
-//       }
-//     }
-//   },
-// );
