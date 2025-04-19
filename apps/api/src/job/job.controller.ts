@@ -1,3 +1,5 @@
+import { AccessTokenGuard } from '@app/common/guards';
+import { AuthenticatedRequest } from '@app/common/types';
 import {
   Body,
   Controller,
@@ -7,15 +9,18 @@ import {
   Patch,
   Post,
   Query,
-  UploadedFile,
+  Req,
+  UploadedFiles,
+  UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
-import { FileInterceptor } from '@nestjs/platform-express';
+import { FilesInterceptor } from '@nestjs/platform-express';
 import { AwsS3Service } from 'src/s3/aws-s3.service';
 import { JobService } from './job.service';
 import { CreateJobDto } from './types/create-job.dto';
 import { UpdateJobDto } from './types/update-job.dto';
 
+@UseGuards(AccessTokenGuard)
 @Controller('job')
 export class JobController {
   constructor(
@@ -24,8 +29,11 @@ export class JobController {
   ) {}
 
   @Post()
-  async createJob(@Body() createJobDto: CreateJobDto) {
-    return this.jobService.createJob(createJobDto);
+  async createJob(
+    @Body() createJobDto: CreateJobDto,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.jobService.createJob(createJobDto, req.user.userId);
   }
 
   @Get()
@@ -35,7 +43,7 @@ export class JobController {
 
   @Patch(':id')
   @UseInterceptors(
-    FileInterceptor('file', {
+    FilesInterceptor('files', 100, {
       fileFilter: (req, file, cb) => {
         if (!file) {
           return cb(null, true);
@@ -55,13 +63,25 @@ export class JobController {
   async updateJob(
     @Param('id') id: string,
     @Body() updateJobDto: UpdateJobDto,
-    @UploadedFile() file?: Express.Multer.File,
+    @Req() req: AuthenticatedRequest,
+    @UploadedFiles() files?: Express.Multer.File[],
   ) {
-    const report = await this.s3.uploadFile(file);
-    return this.jobService.updateJob(id, {
-      ...updateJobDto,
-      report: report?.url,
-    });
+    const newReports = await Promise.all(
+      files?.map(async (file) => ({
+        url: (await this.s3.uploadFile(file)).url,
+        name: file.originalname,
+      })) || [],
+    );
+    const existingReports = updateJobDto.reports || [];
+
+    return this.jobService.updateJob(
+      id,
+      {
+        ...updateJobDto,
+        reports: [...existingReports, ...newReports],
+      },
+      req.user.userId,
+    );
   }
 
   @Delete(':id')

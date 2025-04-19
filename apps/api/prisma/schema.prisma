@@ -18,6 +18,8 @@ model User {
   username      String         @unique
   password      String
   name          String?
+  avatar        String?
+  provider      String?
   role          Role           @default(USER)
   employerIds   String[]       @db.ObjectId
   employeeIds   String[]       @db.ObjectId
@@ -26,6 +28,11 @@ model User {
   locations     Location[]
   userLocations UserLocation[]
   Job           Job[]
+  notifications Notification[]
+  createJobs Job[] @relation(name: "creator")
+  
+  deviceTemplates DeviceTemplate[] @relation("UserDeviceTemplates", fields: [deviceTemplateIds], references: [id])
+  deviceTemplateIds String[] @db.ObjectId
 }
 
 model Location {
@@ -46,13 +53,21 @@ model Location {
   @@index([ownerId], name: "ownerId")
 }
 
+type File {
+  url String
+  name String
+}
+
 model Job {
   id          String    @id @default(auto()) @map("_id") @db.ObjectId
   title       String
   description String?
   status      JobStatus @default(PENDING)
-  report      String?
+  order       Float       @default(0)
+  reports      File[]
   locationId  String    @db.ObjectId
+  creatorId   String    @db.ObjectId
+  creator     User      @relation(name: "creator",fields: [creatorId], references: [id], onDelete: Cascade)
   asigneeId   String?   @db.ObjectId
   asignee     User?     @relation(fields: [asigneeId], references: [id], onDelete: Cascade)
   location    Location  @relation(fields: [locationId], references: [id], onDelete: Cascade)
@@ -90,6 +105,8 @@ model DeviceTemplate {
   description String?
   deviceType  DeviceType
   Device      Device[]
+  users       User[]     @relation("UserDeviceTemplates", fields: [userIds], references: [id])
+  userIds     String[]   @db.ObjectId
 }
 
 model Gateway {
@@ -158,6 +175,20 @@ model PetsPredict {
   createdAt  DateTime @default(now())
 }
 
+model Notification {
+  id           String @id @default(auto()) @map("_id") @db.ObjectId
+  sendToUserId String @db.ObjectId
+  sendToUser   User   @relation(fields: [sendToUserId], references: [id])
+  content      String
+  status       NotificationStatus @default(UNREAD)
+  createdAt    DateTime           @default(now())
+}
+
+enum NotificationStatus {
+  READ
+  UNREAD
+}
+
 type Condition {
   type                 ConditionType
   cronCondition        String?
@@ -166,6 +197,8 @@ type Condition {
 
 type Action {
   type     ActionType
+  time     Int?
+  useAI    Boolean?
   deviceId String?
   toEmail  String?
   title    String?
@@ -231,6 +264,7 @@ enum JobStatus {
   PENDING
   IN_PROGRESS
   COMPLETED
+  CANCELLED
 }
 
 enum ConditionType {
@@ -256,4 +290,5 @@ enum ActionType {
   TurnOn
   TurnOff
   SendEmail
+  Watering
 }

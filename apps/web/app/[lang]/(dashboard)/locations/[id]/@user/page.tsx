@@ -6,11 +6,12 @@ import {
 } from '@repo/ui/components/ui/tabs';
 import AutomationSection from '../../../../../../components/automation/AutomationSection';
 import { DeviceTable } from '../../../../../../components/devices/DeviceTable';
+import DiseaseDetectHistory from '../../../../../../components/disease/DiseaseDetectHistory';
 import ChartSection from '../../../../../../components/location/ChartSection';
 import IrrigationHistory from '../../../../../../components/location/IrrigationHistory';
 import UserLocationTable from '../../../../../../components/location/UserLocationTable';
 import { getDictionary } from '../../../../../dictionaries';
-import JobTable from './JobTable';
+import JobKanbanBoard from './JobKanbanBoard';
 
 export default async function UserLocationPage({
   params,
@@ -66,6 +67,12 @@ export default async function UserLocationPage({
         >
           Tưới tiêu
         </TabsTrigger>
+        <TabsTrigger
+          value="disease-detect"
+          className="text-lg max-w-[130px] hover:text-primary/70"
+        >
+          Disease detect
+        </TabsTrigger>
       </TabsList>
       {/* <TabsContent value="areas">
         <DeviceTable dictionary={dictionary}/>
@@ -77,7 +84,8 @@ export default async function UserLocationPage({
         <UserLocationTable locationId={params.id} dictionary={dictionary} />
       </TabsContent>
       <TabsContent value="jobs">
-        <JobTable locationId={params.id} dictionary={dictionary} />
+        {/* <JobTable locationId={params.id} dictionary={dictionary} /> */}
+        <JobKanbanBoard locationId={params.id} dictionary={dictionary} />
       </TabsContent>
       <TabsContent value="charts">
         <ChartSection locationId={params.id} dictionary={dictionary} />
@@ -87,6 +95,9 @@ export default async function UserLocationPage({
       </TabsContent>
       <TabsContent value="irrigation">
         <IrrigationHistory locationId={params.id} />
+      </TabsContent>
+      <TabsContent value="disease-detect">
+        <DiseaseDetectHistory canDelete />
       </TabsContent>
     </Tabs>
   );
