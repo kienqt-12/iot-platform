@@ -1,4 +1,3 @@
 {
   "buildCommand": "yarn install --legacy-peer-deps && yarn build",
-  "rootDirectory": "apps/web"
 }
