@@ -26,8 +26,7 @@ app.use(express.json());
 app.get('/qr-data', async (_req: Request, res: Response) => {
   const data = {
     host: '10.15.225.103', // Địa chỉ IP của server
-    port: HTTP_PORT, // Sử dụng cổng HTTP
-    clientId: 'esp8266',
+    port: MQTT_PORT, // Sử dụng cổng HTTP
   };
   try {
     const qr = await QRCode.toDataURL(JSON.stringify(data));
@@ -81,18 +80,25 @@ mqttClient.on('connect', () => {
 
 mqttClient.on('message', (topic: string, message: Buffer) => {
   try {
-    const parsedMessage = JSON.parse(message.toString());
-    console.log('📥 Nhận payload:', parsedMessage);
-    
-    const { type, time, data } = parsedMessage;
-
-    if (topic === 'esp8266/sensor') {
-      if (type && time && data !== undefined) {
-        latestSensorData[type] = { time, data };
-        console.log(`✅ ${type}: ${data} @ ${new Date(time * 1000).toLocaleString()}`);
-      } else {
-        console.warn('⚠️ Payload thiếu trường:', parsedMessage);
-      }
+    const { type, time, data } = JSON.parse(message.toString());
+    if (type && time && data !== undefined) {
+      latestSensorData[type] = { time, data };
+      console.log(
+        `✅ ${type}: ${data} @ ${new Date(time * 1000).toLocaleString()}`,
+      );
+      aedesServer.publish(
+        {
+          topic: `esp8266/sensor`,
+          payload: JSON.stringify({ time, data }),
+          cmd: 'publish',
+          qos: 0,
+          dup: false,
+          retain: false,
+        },
+        () => {},
+      );
+    } else {
+      console.warn('⚠️ Payload thiếu trường:', message.toString());
     }
   } catch (e) {
     console.error('❌ JSON không hợp lệ:', message.toString());
@@ -137,3 +143,23 @@ aedesServer
   .on('clientDisconnect', (client: Client) => {
     console.log(`❌ Client ngắt kết nối: ${client?.id}`);
   });
+
+// aedesServer.on(
+//   'publish' as any,
+//   (packet: AedesPublishPacket, client?: Client): void => {
+//     if (client) {
+//       const { topic, payload } = packet;
+//       const message = payload.toString();
+//       console.log(
+//         `📨 Nhận publish từ ${client.id}: topic=${topic}, message=${message}`,
+//       );
+
+//       try {
+//         const data = JSON.parse(message);
+//         console.log('📦 Payload:', data);
+//       } catch {
+//         console.warn('⚠️ Không phải JSON:', message);
+//       }
+//     }
+//   },
+// );

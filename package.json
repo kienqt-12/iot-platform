@@ -17,8 +17,7 @@
     "db:seed": "turbo run db:seed",
     "prisma:generate": "turbo run prisma:generate --filter api",
     "shadcn:add": "yarn workspace @repo/ui shadcn:add",
-    "format": "prettier --write \"**/*.{ts,tsx,md}\"",
-    "vercel-build": "npm install --legacy-peer-deps && npm run build"
+    "format": "prettier --write \"**/*.{ts,tsx,md}\""
   },
   "devDependencies": {
     "@repo/eslint-config": "*",
